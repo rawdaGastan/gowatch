@@ -20,7 +20,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
-          args: --config=../.golangci.yml
+          args: --config=.golangci.yml
 
     strategy:
       fail-fast: false

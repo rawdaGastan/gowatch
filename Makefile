@@ -15,7 +15,7 @@ build:
 
 lint: 
 	@echo "Running $@"
-	golangci-lint run -c ../.golangci.yml --timeout 10m
+	golangci-lint run -c .golangci.yml --timeout 10m
 
 coverage: clean 
 	mkdir coverage

@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/rawdaGastan/gowatch/app"
 	"github.com/rs/zerolog"
@@ -10,12 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// goWatchCmd represents the root base command when called without any subcommands
+// goWatchCmd represents the root base command when called without any subcommands.
 var goWatchCmd = &cobra.Command{
 	Use:   "gowatch",
 	Short: "Run gowatch",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		interval, err := cmd.Flags().GetUint64("interval")
+		interval, err := cmd.Flags().GetFloat64("interval")
 		if err != nil {
 			return err
 		}
@@ -30,7 +32,7 @@ var goWatchCmd = &cobra.Command{
 			return err
 		}
 
-		exec, err := cmd.Flags().GetString("exec")
+		exec, err := cmd.Flags().GetBool("exec")
 		if err != nil {
 			return err
 		}
@@ -50,18 +52,46 @@ var goWatchCmd = &cobra.Command{
 			return err
 		}
 
+		var execCmd string
+		var execArgs []string
+		if len(args) > 0 {
+			execCmd = args[0]
+		}
+
+		if len(args) > 1 {
+			execArgs = args[1:]
+		}
+
+		updateCmd, err := cmd.Flags().GetString("update")
+		if err != nil {
+			return err
+		}
+
+		var uCmd string
+		var uArgs []string
+		updateCmdArgs := strings.Split(updateCmd, " ")
+		if len(updateCmdArgs) > 0 {
+			uCmd = updateCmdArgs[0]
+		}
+
+		if len(updateCmdArgs) > 1 {
+			uArgs = updateCmdArgs[1:]
+		}
+
+		// TODO: validations
 		app := app.App{
 			Interval: interval,
+			Exec:     exec,
 			Diff:     diff,
 			NoTitle:  noTitle,
 			ChgExit:  chgExit,
 			ErrExit:  errExit,
 			Beep:     beep,
 
-			Cmd: exec,
-			// Args:       args,
-			// UpdateCmd:  "",
-			// UpdateArgs: args,
+			Cmd:        execCmd,
+			Args:       execArgs,
+			UpdateCmd:  uCmd,
+			UpdateArgs: uArgs,
 		}
 
 		app.Run(cmd.Context())
@@ -70,8 +100,6 @@ var goWatchCmd = &cobra.Command{
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootcmd.Flags().
 func Execute() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
@@ -86,18 +114,18 @@ func Execute() {
 }
 
 func init() {
-	var defaultInterval uint64 = 2
+	goWatchCmd.Flags().StringP("update", "u", "", "update command to be executed when output updates")
 
-	goWatchCmd.Flags().Uint64P("interval", "n", defaultInterval, "seconds to wait between updates")
+	goWatchCmd.Flags().Float64P("interval", "n", 2, "seconds to wait between updates")
 	goWatchCmd.Flags().BoolP("differences", "d", false, "highlight changes between updates")
+	goWatchCmd.Flags().BoolP("exec", "x", false, "pass command to exec instead of \"sh -c\"")
 	goWatchCmd.Flags().BoolP("no-title", "t", false, "turn off header")
 	goWatchCmd.Flags().BoolP("chgexit", "g", false, "exit when output from command changes")
 	goWatchCmd.Flags().BoolP("errexit", "e", false, "exit if command has a non-zero exit")
 
 	goWatchCmd.Flags().BoolP("beep", "b", false, "beep if command has a non-zero exit")
 
-	goWatchCmd.Flags().BoolP("precise", "p", false, "attempt run command in precise intervals")
-	goWatchCmd.Flags().BoolP("color", "c", false, "interpret ANSI color and style sequences")
-	goWatchCmd.Flags().BoolP("--no-linewrap", "w", false, "Turns off line wrapping and truncates long lines instead.")
-	goWatchCmd.Flags().StringP("exec", "x", "", "pass command to exec instead of \"sh -c\"")
+	// goWatchCmd.Flags().BoolP("precise", "p", false, "attempt run command in precise intervals")
+	// goWatchCmd.Flags().BoolP("color", "c", false, "interpret ANSI color and style sequences")
+	// goWatchCmd.Flags().BoolP("no-linewrap", "w", false, "Turns off line wrapping and truncates long lines instead.")
 }
